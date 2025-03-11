@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gold Price Forecaster</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Gold Price Trend Forecast</h1>
+    <canvas id="goldChart" width="800" height="400"></canvas>
+
+    <script>
+        const ctx = document.getElementById('goldChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [...{{ dates | tojson }}, ...{{ forecast_dates | tojson }}],
+                datasets: [
+                    {
+                        label: 'Gold Price',
+                        data: {{ prices | tojson }},
+                        borderColor: 'blue',
+                        fill: false
+                    },
+                    {
+                        label: 'SMA (20 days)',
+                        data: {{ sma | tojson }},
+                        borderColor: 'green',
+                        fill: false
+                    },
+                    {
+                        label: 'Forecast',
+                        data: Array({{ prices | length }}).fill(null).concat({{ forecast_values | tojson }}),
+                        borderColor: 'red',
+                        borderDash: [5, 5],
+                        fill: false
+                    }
+                ]
+            },
+            options: { scales: { x: { title: { display: true, text: 'Date' } }, y: { title: { display: true, text: 'Price (USD)' } } } }
+        });
+    </script>
+</body>
+</html>
