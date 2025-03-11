@@ -2,11 +2,9 @@ import pandas as pd
 import numpy as np
 
 def forecast_trend(data, window=20, forecast_days=5):
-    # Tính trung bình động (SMA)
+    if len(data) < window:
+        raise ValueError(f"Not enough data points ({len(data)}) for window size {window}")
     sma = data.rolling(window=window).mean()
-    
-    # Dự báo đơn giản: lấy giá trị SMA cuối cùng làm xu hướng
-    last_sma = sma[-1]
-    forecast = [last_sma] * forecast_days  # Dự báo 5 ngày tiếp theo
-    
+    last_sma = sma[-1] if not pd.isna(sma[-1]) else data[-1]  # Dùng giá cuối nếu SMA bị NaN
+    forecast = [last_sma] * forecast_days
     return sma, forecast
