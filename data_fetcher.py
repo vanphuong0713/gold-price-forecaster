@@ -1,44 +1,33 @@
-import yfinance as yf
-import pandas as pd
-from datetime import datetime
-import time
-import logging
 import requests
+import pandas as pd
+import logging
 
-# Thiết lập logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def check_internet_connection():
-    """Kiểm tra kết nối mạng"""
-    try:
-        requests.get("https://www.google.com", timeout=5)
-        return True
-    except requests.ConnectionError:
-        return False
-
-def fetch_gold_price_data(max_retries=3, delay=2):
-    if not check_internet_connection():
-        logger.error("No internet connection available")
-        raise ConnectionError("Cannot connect to the internet")
+def fetch_gold_price_data():
+    api_key = "YOUR_API_KEY"  # Thay bằng key từ Alpha Vantage
+    url = f"https://www.alphavantage.co/query?function=FX_DAILY&from_symbol=XAU&to_symbol=USD&apikey={api_key}"
     
-    today = datetime.now().strftime('%Y-%m-%d')
-    for attempt in range(max_retries):
-        try:
-            logger.info(f"Attempt {attempt + 1}/{max_retries}: Fetching gold price data from yfinance...")
-            gold = yf.download('GC=F', start='2023-01-01', end=today, progress=False, timeout=10)
-            if gold.empty:
-                logger.warning("Received empty data from yfinance")
-                raise ValueError("No data returned from Yahoo Finance")
-            logger.info(f"Successfully fetched {len(gold)} data points")
-            return gold['Close']
-        except Exception as e:
-            logger.error(f"Error fetching data: {str(e)}")
-            if attempt < max_retries - 1:
-                logger.info(f"Retrying in {delay} seconds...")
-                time.sleep(delay)
-                continue
-            raise Exception(f"Failed to fetch gold price data after {max_retries} attempts: {str(e)}")
+    try:
+        logger.info("Fetching gold price data from Alpha Vantage...")
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # Ném lỗi nếu HTTP không thành công
+        data = response.json()
+        
+        if "Time Series FX (Daily)" not in data:
+            logger.error("Invalid response from Alpha Vantage")
+            raise ValueError("No data returned from Alpha Vantage")
+        
+        time_series = data["Time Series FX (Daily)"]
+        df = pd.DataFrame.from_dict(time_series, orient='index')
+        df = df['4. close'].astype(float)
+        df.index = pd.to_datetime(df.index)
+        logger.info(f"Fetched {len(df)} data points from Alpha Vantage")
+        return df.sort_index()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to connect to Alpha Vantage: {str(e)}")
+        raise Exception(f"Error fetching data: {str(e)}")
 
 if __name__ == "__main__":
     try:
