@@ -4,7 +4,6 @@ from forecaster import forecast_trend
 import os
 import logging
 
-# Thiết lập logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -13,11 +12,11 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     try:
-        logger.info("Fetching gold price data...")
+        logger.info("Starting data fetch...")
         data = fetch_gold_price_data()
         if data.empty:
             logger.error("No data fetched from yfinance")
-            return "Error: No data available", 500
+            return "Error: No gold price data available", 500
         
         logger.info("Calculating forecast...")
         sma, forecast = forecast_trend(data)
